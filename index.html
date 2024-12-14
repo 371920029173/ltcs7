@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline Social Site</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        textarea, input[type="file"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Offline Social Site</h1>
+        <textarea id="text-input" placeholder="Type your message here..."></textarea>
+        <input type="file" id="file-input">
+        <button onclick="sendMessage()">Send</button>
+        <div id="messages"></div>
+    </div>
+
+    <script>
+        const githubRepo = '371920029173/ltcs7';
+        const githubToken = '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';
+
+        function sendMessage() {
+            const textInput = document.getElementById('text-input').value;
+            const fileInput = document.getElementById('file-input').files[0];
+            const messagesDiv = document.getElementById('messages');
+
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message';
+            messageDiv.innerHTML = `<strong>You:</strong> ${textInput}`;
+            messagesDiv.appendChild(messageDiv);
+
+            // Upload text message to GitHub
+            fetch(`https://api.github.com/repos/${githubRepo}/contents/content/messages.txt`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${githubToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: 'Add message',
+                    content: btoa(textInput)
+                })
+            })
+            .then(response => response.json())
+            .then(data => console.log(data))
+            .catch(error => console.error('Error:', error));
+
+            // Upload file to GitHub
+            if (fileInput) {
+                const reader = new FileReader();
+                reader.onloadend = function() {
+                    fetch(`https://api.github.com/repos/${githubRepo}/contents/content/${fileInput.name}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Authorization': `token ${githubToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            message: 'Add file',
+                            content: btoa(reader.result)
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => console.log(data))
+                    .catch(error => console.error('Error:', error));
+                };
+                reader.readAsDataURL(fileInput);
+            }
+
+            // Clear inputs
+            document.getElementById('text-input').value = '';
+            document.getElementById('file-input').value = '';
+        }
+
+        // Load messages from GitHub
+        function loadMessages() {
+            fetch(`https://api.github.com/repos/${githubRepo}/contents/content/messages.txt`)
+                .then(response => response.json())
+                .then(data => {
+                    const messagesDiv = document.getElementById('messages');
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = 'message';
+                    messageDiv.innerHTML = `<strong>User:</strong> ${atob(data.content)}`;
+                    messagesDiv.appendChild(messageDiv);
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        // Load messages on page load
+        window.onload = loadMessages;
+    </script>
+</body>
+</html>
